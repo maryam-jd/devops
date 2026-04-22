@@ -18,12 +18,15 @@
   <input id="inp" type="text" placeholder="Enter a task..." />
   <button onclick="addTodo()">Add</button>
   <ul id="list"></ul>
-  <script>
+    <script>
     async function loadTodos() {
       const res = await fetch('/api/todos');
       const todos = await res.json();
       document.getElementById('list').innerHTML =
-        todos.map(t => `<li>${t.title}</li>`).join('');
+        todos.map(t => `<li id="todo-${t.id}">
+                          ${t.title}
+                          <button onclick="deleteTodo(${t.id})" style="margin-left: 10px; background: #dc3545; padding: 5px 10px;">Delete</button>
+                        </li>`).join('');
     }
     async function addTodo() {
       const title = document.getElementById('inp').value;
@@ -34,6 +37,12 @@
         body: JSON.stringify({ title })
       });
       document.getElementById('inp').value = '';
+      loadTodos();
+    }
+    async function deleteTodo(id) {
+      await fetch(`/api/todos/${id}`, {
+        method: 'DELETE'
+      });
       loadTodos();
     }
     loadTodos();
