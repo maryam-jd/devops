@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Todo App - FA23-BCS-083</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; background: #f0f4f8; }
+    h1 { color: #1F4E79; }
+    input { padding: 10px; width: 70%; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px 20px; background: #2E75B6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    ul { list-style: none; padding: 0; }
+    li { background: white; margin: 8px 0; padding: 12px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .tag { background: #1F4E79; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 8px; }
+  </style>
+</head>
+<body>
+  <h1>📝 Todo App <span class="tag">FA23-BCS-083</span></h1>
+  <input id="inp" type="text" placeholder="Enter a task..." />
+  <button onclick="addTodo()">Add</button>
+  <ul id="list"></ul>
+  <script>
+    async function loadTodos() {
+      const res = await fetch('/api/todos');
+      const todos = await res.json();
+      document.getElementById('list').innerHTML =
+        todos.map(t => `<li>${t.title}</li>`).join('');
+    }
+    async function addTodo() {
+      const title = document.getElementById('inp').value;
+      if (!title) return;
+      await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
+      });
+      document.getElementById('inp').value = '';
+      loadTodos();
+    }
+    loadTodos();
+  </script>
+</body>
+</html>
