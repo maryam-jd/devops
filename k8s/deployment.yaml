@@ -16,12 +16,14 @@ spec:
     spec:
       containers:
         - name: myapp
-          image: YOURDOCKERHUBUSERNAME/myapp:FA23-BCS-083
+          image: maryam247/myapp:FA23-BCS-083
           ports:
             - containerPort: 5000
           env:
             - name: NODE_ENV
               value: "production"
+            - name: MONGO_URI
+              value: "mongodb+srv://YOUR_ATLAS_URI"
           resources:
             requests:
               memory: "128Mi"
