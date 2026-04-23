@@ -4,141 +4,48 @@
   <meta charset="UTF-8">
   <title>Todo App - FA23-BCS-083</title>
   <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: Arial, sans-serif;
-      background: #f0f4f8;
-      min-height: 100vh;
-      padding: 40px 20px;
-    }
-    .container { max-width: 620px; margin: 0 auto; }
-    h1 { color: #1F4E79; font-size: 28px; margin-bottom: 6px; }
-    .tag {
-      background: #1F4E79; color: white;
-      padding: 3px 10px; border-radius: 12px;
-      font-size: 13px; vertical-align: middle;
-    }
-    .db-status {
-      font-size: 13px; margin-bottom: 20px; margin-top: 6px;
-      color: #555;
-    }
-    .db-status span { font-weight: bold; }
-    .db-status .connected { color: #107C41; }
-    .db-status .disconnected { color: #C00000; }
-    .input-row { display: flex; gap: 10px; margin-bottom: 20px; }
-    input[type="text"] {
-      flex: 1; padding: 12px 16px;
-      border: 1px solid #ccc; border-radius: 6px;
-      font-size: 15px;
-    }
-    button.add-btn {
-      padding: 12px 24px; background: #2E75B6;
-      color: white; border: none; border-radius: 6px;
-      font-size: 15px; cursor: pointer;
-    }
-    button.add-btn:hover { background: #1F4E79; }
-    .todo-list { list-style: none; }
-    .todo-item {
-      background: white; padding: 14px 16px;
-      border-radius: 6px; margin-bottom: 10px;
-      display: flex; justify-content: space-between;
-      align-items: center;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    }
-    .todo-title { font-size: 15px; color: #333; }
-    .todo-meta { font-size: 11px; color: #999; margin-top: 3px; }
-    .del-btn {
-      background: #C00000; color: white;
-      border: none; border-radius: 4px;
-      padding: 6px 12px; cursor: pointer; font-size: 13px;
-    }
-    .del-btn:hover { background: #8B0000; }
-    .empty { color: #999; text-align: center; padding: 30px; font-size: 14px; }
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; background: #f0f4f8; }
+    h1 { color: #1F4E79; }
+    input { padding: 10px; width: 70%; border: 1px solid #ccc; border-radius: 4px; }
+    button { padding: 10px 20px; background: #2E75B6; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    ul { list-style: none; padding: 0; }
+    li { background: white; margin: 8px 0; padding: 12px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    .tag { background: #1F4E79; color: white; padding: 2px 8px; border-radius: 10px; font-size: 12px; margin-left: 8px; }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>📝 Todo App <span class="tag">FA23-BCS-083</span></h1>
-    <div class="db-status">
-      Database: <span id="db-status-text" class="connected">checking...</span>
-    </div>
-    <div class="input-row">
-      <input type="text" id="inp" placeholder="Enter a task..." />
-      <button class="add-btn" onclick="addTodo()">Add</button>
-    </div>
-    <ul class="todo-list" id="list"></ul>
-  </div>
-
-  <script>
-    async function checkHealth() {
-      try {
-        const res = await fetch('/api/health');
-        const data = await res.json();
-        const el = document.getElementById('db-status-text');
-        el.textContent = data.database;
-        el.className = data.database === 'connected' ? 'connected' : 'disconnected';
-      } catch (e) {
-        document.getElementById('db-status-text').textContent = 'error';
-      }
-    }
-
+  <h1>📝 Todo App <span class="tag">FA23-BCS-083</span></h1>
+  <input id="inp" type="text" placeholder="Enter a task..." />
+  <button onclick="addTodo()">Add</button>
+  <ul id="list"></ul>
+    <script>
     async function loadTodos() {
-      try {
-        const res = await fetch('/api/todos');
-        const todos = await res.json();
-        const list = document.getElementById('list');
-        if (todos.length === 0) {
-          list.innerHTML = '<li class="empty">No tasks yet. Add one above!</li>';
-          return;
-        }
-        list.innerHTML = todos.map(t => `
-          <li class="todo-item">
-            <div>
-              <div class="todo-title">${t.title}</div>
-              <div class="todo-meta">Added: ${new Date(t.createdAt).toLocaleString()}</div>
-            </div>
-            <button class="del-btn" onclick="deleteTodo('${t._id}')">Delete</button>
-          </li>
-        `).join('');
-      } catch (e) {
-        console.error('Failed to load todos', e);
-      }
+      const res = await fetch('/api/todos');
+      const todos = await res.json();
+      document.getElementById('list').innerHTML =
+        todos.map(t => `<li id="todo-${t.id}">
+                          ${t.title}
+                          <button onclick="deleteTodo(${t.id})" style="margin-left: 10px; background: #dc3545; padding: 5px 10px;">Delete</button>
+                        </li>`).join('');
     }
-
     async function addTodo() {
-      const inp = document.getElementById('inp');
-      const title = inp.value.trim();
+      const title = document.getElementById('inp').value;
       if (!title) return;
-      try {
-        await fetch('/api/todos', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title })
-        });
-        inp.value = '';
-        loadTodos();
-      } catch (e) {
-        console.error('Failed to add todo', e);
-      }
-    }
-
-    async function deleteTodo(id) {
-      try {
-        await fetch(`/api/todos/${id}`, { method: 'DELETE' });
-        loadTodos();
-      } catch (e) {
-        console.error('Failed to delete todo', e);
-      }
-    }
-
-    // Allow Enter key to add todo
-    document.addEventListener('DOMContentLoaded', () => {
-      document.getElementById('inp').addEventListener('keypress', e => {
-        if (e.key === 'Enter') addTodo();
+      await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title })
       });
-      checkHealth();
+      document.getElementById('inp').value = '';
       loadTodos();
-    });
+    }
+    async function deleteTodo(id) {
+      await fetch(`/api/todos/${id}`, {
+        method: 'DELETE'
+      });
+      loadTodos();
+    }
+    loadTodos();
   </script>
 </body>
 </html>
