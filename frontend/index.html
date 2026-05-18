@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TaskFlow — DevOps Todo App</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0d0f; --surface: #16161a; --surface2: #1e1e24;
+      --border: #2a2a33; --accent: #7c6af7; --accent2: #f7c26a;
+      --danger: #f76a6a; --success: #6af7a0; --text: #e8e8f0;
+      --muted: #6b6b80; --low: #6af7a0; --medium: #f7c26a; --high: #f76a6a;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'DM Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+    header { padding: 32px 60px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 20px; }
+    .logo { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 1.8rem; letter-spacing: -1px; }
+    .logo span { color: var(--accent); }
+    .tagline { font-size: 0.68rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+    .stats { display: flex; gap: 28px; }
+    .stat { text-align: center; }
+    .stat-num { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+    main { max-width: 860px; margin: 0 auto; padding: 44px 24px; }
+    .add-form { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; margin-bottom: 36px; }
+    .form-title { font-family: 'Syne', sans-serif; font-size: 0.7rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+    .form-row.full { grid-template-columns: 1fr; }
+    input, textarea, select { width: 100%; background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 12px 15px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 0.83rem; outline: none; transition: border-color 0.2s; resize: none; }
+    input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+    input::placeholder, textarea::placeholder { color: var(--muted); }
+    select option { background: var(--surface2); }
+    .btn { padding: 12px 26px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Syne', sans-serif; font-weight: 700; font-size: 0.83rem; letter-spacing: 1px; transition: all 0.2s; }
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-primary:hover { background: #9080ff; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+    .filter-bar { display: flex; gap: 8px; margin-bottom: 28px; flex-wrap: wrap; }
+    .filter-btn { padding: 7px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 50px; color: var(--muted); cursor: pointer; font-family: 'DM Mono', monospace; font-size: 0.72rem; transition: all 0.2s; }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .todo-list { display: flex; flex-direction: column; gap: 10px; }
+    .todo-item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 18px 22px; display: flex; align-items: flex-start; gap: 14px; transition: all 0.25s; animation: slideIn 0.3s ease; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    .todo-item:hover { border-color: var(--accent); transform: translateX(3px); }
+    .todo-item.completed { opacity: 0.5; }
+    .todo-item.completed .todo-title { text-decoration: line-through; color: var(--muted); }
+    .check-btn { width: 22px; height: 22px; border-radius: 50%; border: 2px solid var(--border); background: transparent; cursor: pointer; flex-shrink: 0; margin-top: 2px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; font-size: 11px; }
+    .check-btn:hover { border-color: var(--success); }
+    .todo-item.completed .check-btn { background: var(--success); border-color: var(--success); color: #000; }
+    .todo-content { flex: 1; }
+    .todo-title { font-family: 'Syne', sans-serif; font-weight: 600; font-size: 0.95rem; margin-bottom: 3px; }
+    .todo-desc { font-size: 0.76rem; color: var(--muted); margin-bottom: 8px; }
+    .todo-meta { display: flex; gap: 8px; align-items: center; }
+    .priority-badge { padding: 2px 9px; border-radius: 50px; font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase; font-weight: 500; }
+    .priority-low { background: rgba(106,247,160,0.15); color: var(--low); }
+    .priority-medium { background: rgba(247,194,106,0.15); color: var(--medium); }
+    .priority-high { background: rgba(247,106,106,0.15); color: var(--high); }
+    .todo-date { font-size: 0.62rem; color: var(--muted); }
+    .delete-btn { background: transparent; border: 1px solid transparent; color: var(--muted); cursor: pointer; padding: 5px 9px; border-radius: 7px; font-size: 0.9rem; transition: all 0.2s; flex-shrink: 0; }
+    .delete-btn:hover { border-color: var(--danger); color: var(--danger); background: rgba(247,106,106,0.1); }
+    .empty-state { text-align: center; padding: 60px 20px; color: var(--muted); }
+    .empty-state .icon { font-size: 2.5rem; margin-bottom: 12px; }
+    .empty-state p { font-family: 'Syne', sans-serif; font-size: 1rem; }
+    .api-status { font-size: 0.65rem; padding: 4px 10px; border-radius: 50px; }
+    .api-status.ok { background: rgba(106,247,160,0.15); color: var(--success); }
+    .api-status.err { background: rgba(247,106,106,0.15); color: var(--danger); }
+    .toast { position: fixed; bottom: 28px; right: 28px; background: var(--surface2); border: 1px solid var(--accent); color: var(--text); padding: 12px 20px; border-radius: 12px; font-size: 0.78rem; z-index: 999; transform: translateY(100px); opacity: 0; transition: all 0.3s; }
+    .toast.show { transform: translateY(0); opacity: 1; }
+    @media (max-width: 600px) { header { padding: 20px 16px; } main { padding: 28px 14px; } .form-row { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <div class="logo">Task<span>Flow</span></div>
+    <div class="tagline">CSC418 DevOps Final — Three-Tier App</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:20px">
+    <div id="apiStatus" class="api-status">Connecting...</div>
+    <div class="stats">
+      <div class="stat"><div class="stat-num" id="totalCount">0</div><div class="stat-label">Total</div></div>
+      <div class="stat"><div class="stat-num" id="pendingCount" style="color:var(--accent2)">0</div><div class="stat-label">Pending</div></div>
+      <div class="stat"><div class="stat-num" id="doneCount" style="color:var(--success)">0</div><div class="stat-label">Done</div></div>
+    </div>
+  </div>
+</header>
+<main>
+  <div class="add-form">
+    <div class="form-title">// New Task</div>
+    <div class="form-row">
+      <input type="text" id="titleInput" placeholder="Task title..." />
+      <select id="priorityInput">
+        <option value="low">⬇ Low Priority</option>
+        <option value="medium" selected>→ Medium Priority</option>
+        <option value="high">⬆ High Priority</option>
+      </select>
+    </div>
+    <div class="form-row full">
+      <textarea id="descInput" rows="2" placeholder="Description (optional)..."></textarea>
+    </div>
+    <button class="btn btn-primary" id="addBtn" onclick="addTodo()">+ Add Task</button>
+  </div>
+  <div class="filter-bar">
+    <button class="filter-btn active" onclick="setFilter('all', this)">All</button>
+    <button class="filter-btn" onclick="setFilter('pending', this)">Pending</button>
+    <button class="filter-btn" onclick="setFilter('done', this)">Completed</button>
+    <button class="filter-btn" onclick="setFilter('high', this)">🔴 High</button>
+    <button class="filter-btn" onclick="setFilter('medium', this)">🟡 Medium</button>
+    <button class="filter-btn" onclick="setFilter('low', this)">🟢 Low</button>
+  </div>
+  <div class="todo-list" id="todoList"><div style="text-align:center;padding:40px;color:var(--muted)">Loading tasks...</div></div>
+</main>
+<div class="toast" id="toast"></div>
+<script>
+  const API = '/api/todos';
+  let todos = [], currentFilter = 'all';
+
+  async function checkHealth() {
+    try {
+      const res = await fetch('/health');
+      const data = await res.json();
+      const el = document.getElementById('apiStatus');
+      if (data.status === 'OK') { el.textContent = '● API Online'; el.className = 'api-status ok'; }
+    } catch { const el = document.getElementById('apiStatus'); el.textContent = '● API Offline'; el.className = 'api-status err'; }
+  }
+
+  async function fetchTodos() {
+    try {
+      const res = await fetch(API);
+      todos = await res.json();
+      updateStats(); renderTodos();
+    } catch { document.getElementById('todoList').innerHTML = '<div class="empty-state"><div class="icon">⚠</div><p>Cannot reach backend API</p></div>'; }
+  }
+
+  function updateStats() {
+    document.getElementById('totalCount').textContent = todos.length;
+    document.getElementById('pendingCount').textContent = todos.filter(t => !t.completed).length;
+    document.getElementById('doneCount').textContent = todos.filter(t => t.completed).length;
+  }
+
+  function setFilter(f, btn) {
+    currentFilter = f;
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active'); renderTodos();
+  }
+
+  function renderTodos() {
+    const list = document.getElementById('todoList');
+    let filtered = todos;
+    if (currentFilter === 'pending') filtered = todos.filter(t => !t.completed);
+    else if (currentFilter === 'done') filtered = todos.filter(t => t.completed);
+    else if (['high','medium','low'].includes(currentFilter)) filtered = todos.filter(t => t.priority === currentFilter);
+    if (filtered.length === 0) { list.innerHTML = '<div class="empty-state"><div class="icon">✦</div><p>No tasks here yet.</p></div>'; return; }
+    list.innerHTML = filtered.map(todo => `
+      <div class="todo-item ${todo.completed ? 'completed' : ''}" id="item-${todo._id}">
+        <button class="check-btn" onclick="toggleTodo('${todo._id}')">${todo.completed ? '✓' : ''}</button>
+        <div class="todo-content">
+          <div class="todo-title">${esc(todo.title)}</div>
+          ${todo.description ? `<div class="todo-desc">${esc(todo.description)}</div>` : ''}
+          <div class="todo-meta">
+            <span class="priority-badge priority-${todo.priority}">${todo.priority}</span>
+            <span class="todo-date">${new Date(todo.createdAt).toLocaleDateString('en-PK',{day:'numeric',month:'short',year:'numeric'})}</span>
+          </div>
+        </div>
+        <button class="delete-btn" onclick="deleteTodo('${todo._id}')">✕</button>
+      </div>`).join('');
+  }
+
+  async function addTodo() {
+    const title = document.getElementById('titleInput').value.trim();
+    if (!title) { showToast('⚠ Please enter a task title'); return; }
+    const btn = document.getElementById('addBtn');
+    btn.disabled = true; btn.textContent = 'Adding...';
+    try {
+      await fetch(API, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title, description: document.getElementById('descInput').value.trim(), priority: document.getElementById('priorityInput').value }) });
+      document.getElementById('titleInput').value = '';
+      document.getElementById('descInput').value = '';
+      showToast('✓ Task added!'); fetchTodos();
+    } catch { showToast('⚠ Failed to add task'); }
+    btn.disabled = false; btn.textContent = '+ Add Task';
+  }
+
+  async function toggleTodo(id) { await fetch(`${API}/${id}/toggle`, { method: 'PATCH' }); fetchTodos(); }
+  async function deleteTodo(id) { await fetch(`${API}/${id}`, { method: 'DELETE' }); showToast('✕ Task deleted'); fetchTodos(); }
+
+  function showToast(msg) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2500); }
+  function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('titleInput').addEventListener('keydown', e => { if (e.key === 'Enter') addTodo(); });
+    checkHealth(); fetchTodos();
+  });
+</script>
+</body>
+</html>
